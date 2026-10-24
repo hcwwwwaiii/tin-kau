@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#112c26">
+  <meta name="description" content="開一枱，打天九。港式單人天九，三位電腦對手、完整牌譜及逐項計分，電腦手機都玩得。">
+  <title>天九 · 一枱好牌</title>
+  <link rel="icon" type="image/svg+xml" href="./mark.svg">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <a class="brand" href="./" aria-label="天九 · 一枱好牌"><svg viewBox="0 0 28 40" aria-hidden="true"><rect x="1" y="1" width="26" height="38" rx="4"/><path d="M6 20h16"/><circle cx="9" cy="9" r="2"/><circle cx="19" cy="9" r="2"/><circle cx="9" cy="15" r="2"/><circle cx="19" cy="15" r="2"/><circle cx="9" cy="28" r="2"/><circle cx="19" cy="28" r="2"/><circle cx="9" cy="34" r="2"/><circle cx="19" cy="34" r="2"/></svg><span><h1>天九</h1><span class="brand-note">一枱好牌</span></span></a>
+      <nav aria-label="遊戲工具">
+        <button class="quiet" id="help-open">牌譜與玩法</button>
+        <button class="icon-button" id="sound-toggle" aria-label="開啟音效" aria-pressed="false"></button>
+        <button class="icon-button" id="settings-open" aria-label="遊戲設定"></button>
+      </nav>
+    </header>
+    <main>
+      <section class="match-bar" aria-label="牌局狀態"><div><span class="small-label">單人牌局</span><strong id="round-label">準備入座</strong></div><div class="bank-info" id="bank-info">你與三位電腦對手</div><button class="quiet" id="scores-open">計分簿 <span aria-hidden="true">↗</span></button></section>
+      <div class="play-layout">
+        <section class="arena" aria-label="天九牌桌">
+          <div id="seat-2" class="seat north"></div>
+          <div id="seat-3" class="seat west"></div>
+          <div id="seat-1" class="seat east"></div>
+          <div class="table-inscription" aria-hidden="true">天九</div>
+          <div id="table-content"></div>
+          <div class="table-caption"><span>四人八墩</span><span>逆時針出牌</span></div>
+        </section>
+        <section class="hand-panel" aria-label="你的手牌及出牌操作">
+          <div class="hand-heading"><div><strong>你的手牌</strong><span id="hand-count">8 隻</span><span id="self-banker"></span></div><span id="self-score">0 墩 · 0 分</span></div>
+          <p id="turn-status" class="turn-status" role="status" aria-live="polite">入座後，由莊家先出牌。</p>
+          <div id="hand" class="hand"></div>
+          <div class="selection-line"><span id="selection-label">點選骨牌，再選擇出牌或墊牌</span><button id="clear-selection" class="quiet">清除</button></div>
+          <div class="actions"><button id="hint" class="secondary">提示</button><button id="fold" class="secondary">墊牌</button><button id="play" class="primary">出牌</button></div>
+        </section>
+      </div>
+      <div class="table-foot"><p id="last-action">有大牌亦可墊牌，留一手爭尾墩。</p><button class="quiet" id="history-open">牌局記錄 <span aria-hidden="true">↗</span></button></div>
+      <p class="save-note" id="save-note">牌局只儲存在這個瀏覽器 · 純積分遊戲</p>
+    </main>
+    <footer class="site-foot"><span>天九 · 一枱好牌</span><span>天地人和，落牌有序。</span></footer>
+  </div>
+  <dialog id="info-dialog" aria-labelledby="info-title"><div class="dialog-header"><h2 id="info-title">牌譜與玩法</h2><button class="icon-button dialog-close" aria-label="關閉">✕</button></div><div id="info-content"></div></dialog>
+  <dialog id="settings-dialog" aria-labelledby="settings-title"><div class="dialog-header"><h2 id="settings-title">遊戲設定</h2><button class="icon-button dialog-close" aria-label="關閉">✕</button></div><div class="settings-content"><label class="setting-row"><span><strong>顯示牌名</strong><small>手牌下顯示名稱，方便認牌。</small></span><input id="names-setting" type="checkbox" checked></label><label class="setting-row"><span><strong>骨牌音效</strong><small>出牌及收墩時播放輕聲提示。</small></span><input id="sound-setting" type="checkbox"></label><label class="setting-row"><span><strong>電腦出牌速度</strong><small>打開牌譜或切到其他分頁時暫停。</small></span><select id="speed-setting"><option value="1000">慢慢打</option><option value="650">正常</option><option value="250">快手</option></select></label><div class="setting-row"><span><strong>重新開始</strong><small>清除目前牌局及累積分數，重新選莊。</small></span><button id="new-match" class="secondary">開新牌局</button></div></div></dialog>
+  <dialog id="reset-dialog" class="small-dialog" aria-labelledby="reset-title"><div class="dialog-header"><h2 id="reset-title">開新牌局？</h2><button class="icon-button dialog-close" aria-label="取消">✕</button></div><p>目前手牌、墩數及累積分數會清除。</p><div class="dialog-actions"><button class="secondary" id="reset-cancel">繼續這局</button><button class="primary" id="reset-confirm">重新開始</button></div></dialog>
+  <noscript><p class="noscript">請開啟瀏覽器的 JavaScript，才能開始天九牌局。</p></noscript>
+</body>
+</html>
