@@ -7,8 +7,8 @@
   <meta name="description" content="開一枱，打天九。港式單人天九，三位電腦對手、完整牌譜及逐項計分，電腦手機都玩得。">
   <title>天九 · 一枱好牌</title>
   <link rel="icon" type="image/svg+xml" href="./mark.svg">
-  <link rel="stylesheet" href="./style.css">
-  <script type="module" src="./app.js"></script>
+  <link rel="stylesheet" href="./style.css?v=2">
+  <script type="module" src="./app.js?v=2"></script>
 </head>
 <body>
   <div class="app">
@@ -22,25 +22,32 @@
     </header>
     <main>
       <section class="match-bar" aria-label="牌局狀態"><div><span class="small-label">單人牌局</span><strong id="round-label">準備入座</strong></div><div class="bank-info" id="bank-info">你與三位電腦對手</div><button class="quiet" id="scores-open">計分簿 <span aria-hidden="true">↗</span></button></section>
+      <div class="play-scroll">
       <div class="play-layout">
         <section class="arena" aria-label="天九牌桌">
-          <div id="seat-2" class="seat north"></div>
-          <div id="seat-3" class="seat west"></div>
-          <div id="seat-1" class="seat east"></div>
+          <div class="seats">
+            <div id="seat-3" class="seat"></div>
+            <div id="seat-2" class="seat"></div>
+            <div id="seat-1" class="seat"></div>
+          </div>
           <div class="table-inscription" aria-hidden="true">天九</div>
           <div id="table-content"></div>
-          <div class="table-caption"><span>四人八墩</span><span>逆時針出牌</span></div>
         </section>
         <section class="hand-panel" aria-label="你的手牌及出牌操作">
-          <div class="hand-heading"><div><strong>你的手牌</strong><span id="hand-count">8 隻</span><span id="self-banker"></span></div><span id="self-score">0 墩 · 0 分</span></div>
-          <p id="turn-status" class="turn-status" role="status" aria-live="polite">入座後，由莊家先出牌。</p>
+          <div class="hand-heading"><div><strong>你的手牌</strong><span id="hand-count">8 隻</span><span id="self-banker"></span></div><div><span id="self-score">0 墩 · 0 分</span><button id="clear-selection" class="quiet">清除</button></div></div>
           <div id="hand" class="hand"></div>
-          <div class="selection-line"><span id="selection-label">點選骨牌，再選擇出牌或墊牌</span><button id="clear-selection" class="quiet">清除</button></div>
-          <div class="actions"><button id="hint" class="secondary">提示</button><button id="fold" class="secondary">墊牌</button><button id="play" class="primary">出牌</button></div>
         </section>
       </div>
-      <div class="table-foot"><p id="last-action">有大牌亦可墊牌，留一手爭尾墩。</p><button class="quiet" id="history-open">牌局記錄 <span aria-hidden="true">↗</span></button></div>
+      <div class="table-foot"><button class="quiet" id="history-open">牌局記錄 <span aria-hidden="true">↗</span></button></div>
       <p class="save-note" id="save-note">牌局只儲存在這個瀏覽器 · 純積分遊戲</p>
+      </div>
+      <section class="turn-dock" aria-label="回合及出牌">
+        <div class="turn-status" role="status" aria-live="polite" aria-atomic="true">
+          <strong id="turn-status">入座後，由莊家先出牌。</strong>
+          <span id="turn-detail"></span>
+        </div>
+        <div class="actions"><button id="hint" class="secondary">提示</button><button id="fold" class="secondary">墊牌</button><button id="play" class="primary">出牌</button></div>
+      </section>
     </main>
     <footer class="site-foot"><span>天九 · 一枱好牌</span><span>天地人和，落牌有序。</span></footer>
   </div>

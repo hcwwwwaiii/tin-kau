@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const signed = value => value > 0 ? `+${value.toLocaleString()}` : value.toLocaleString();
 const KEY = 'tin-kau.table.v1', OPTIONS_KEY = 'tin-kau.options.v1';
-let state = null, selected = [], timer, notice = '', lastMessage = '', storageOkay = true, audio;
+let state = null, selected = [], timer, notice = '', storageOkay = true, audio;
 let options = { names: true, sound: false, speed: 650 };
 try {
   const savedOptions = JSON.parse(localStorage.getItem(OPTIONS_KEY));
@@ -81,16 +81,17 @@ function renderTable() {
     $('table-content').innerHTML = `<div class="round-end"><span class="tagline">第 ${state.round} 局 · 結牌</span><h2>${win ? '你結牌了' : `${PLAYERS[r.winner]}結牌`}</h2><div class="end-score">${signed(r.delta[0])}<small> 分</small></div><p>${escape([r.specialName, r.sweepName].filter(Boolean).join(' · '))} · 你取得 ${r.won[0]} 墩</p><div class="end-actions"><button class="secondary" data-action="settlement">查看結算</button><button class="primary" data-action="next">下一局</button></div></div>`;
     return;
   }
-  const slots = [2, 3, 1, 0].map(player => {
+  const slots = [3, 2, 1, 0].map(player => {
     const p = state.trick.find(p => p.player === player);
-    const label = p ? p.fold ? `${PLAYERS[player]} · 墊牌` : `${PLAYERS[player]} · ${p.pattern.name}` : state.turn === player ? `${PLAYERS[player]}出牌中` : '';
-    return `<div class="played-slot player-${player}${p && !p.fold && state.topPlayer === player ? ' winning' : ''}"><div class="played-tiles">${p ? p.ids.map(id => tileMarkup(id, p.fold)).join('') : ''}</div><span class="played-label">${escape(label)}</span></div>`;
+    const leading = p && !p.fold && state.topPlayer === player;
+    const label = p ? `${PLAYERS[player]} · ${p.fold ? '墊牌' : p.pattern.name}` : PLAYERS[player];
+    const leadLabel = leading ? `<span class="lead-tag">${state.phase === 'collect' ? '收墩' : '目前最大'}</span>` : '';
+    return `<div class="played-slot player-${player}${leading ? ' winning' : ''}"><div class="played-tiles">${p ? p.ids.map(id => tileMarkup(id, p.fold)).join('') : '<span class="empty-slot" aria-hidden="true">—</span>'}</div><span class="played-label">${escape(label)}${leadLabel}</span></div>`;
   }).join('');
-  const middle = state.phase === 'collect' ? `${PLAYERS[state.topPlayer]}<br>食 ${state.top.n} 墩` : `第 ${state.history.reduce((s, h) => s + h.n, 0) + 1} 墩<br>↺`;
-  $('table-content').innerHTML = `<div class="trick-board">${slots}<div class="compass">${middle}</div></div>`;
+  $('table-content').innerHTML = `<div class="trick-board">${slots}</div>`;
 }
 
-function renderHand() {
+function renderHand(hint = '') {
   const hand = state ? state.hands[0] : ['c0-0', 'm0', 'c2-0', 'c3-0', 'c4-0', 'c7-0', 'm6', 'm9'];
   const focus = document.activeElement?.dataset?.tile;
   $('hand').classList.toggle('names-hidden', !options.names);
@@ -107,14 +108,39 @@ function renderHand() {
   $('clear-selection').disabled = !selected.length;
   $('play').textContent = selected.length && legal ? `出牌 · ${selected.length} 隻` : '出牌';
   $('fold').textContent = top ? `墊 ${top.n} 隻` : '墊牌';
-  let selectionText = myTurn() ? top ? `本輪 ${top.n} 隻 · ${top.name}，可壓牌或暗墊` : '你有領出權，選 1–4 隻合法牌型' : '點選骨牌，再選擇出牌或墊牌';
+  let selectionText = '';
   if (selected.length) {
     if (top && selected.length !== top.n) selectionText = `已選 ${selected.length} 隻，本輪需要 ${top.n} 隻`;
     else if (!top && !p) selectionText = '不是合法牌型，請改選單隻、對牌或指定組合';
     else if (top && !legal) selectionText = '這組牌不能壓過目前最大牌，可以暗墊';
     else selectionText = `已選 ${selected.length} 隻 · ${p.name}`;
   }
-  $('selection-label').textContent = selectionText;
+  let status = '入座後，由莊家先出牌。';
+  if (state?.phase === 'ended') {
+    status = '本局已結算，可查看明細或開始下一局。';
+  } else if (state?.phase === 'collect') {
+    status = `${PLAYERS[state.topPlayer]}以${top.name}收 ${top.n} 墩`;
+  } else if (state) {
+    const column = 1 + state.won.reduce((sum, won) => sum + won, 0);
+    const turn = myTurn() ? '輪到你' : `${PLAYERS[state.turn]}正在想牌…`;
+    status = `第 ${column} 墩 · ${turn}`;
+    if (top) {
+      status += myTurn()
+        ? `｜跟 ${top.n} 隻｜${top.name}最大`
+        : `｜${top.name}最大`;
+    } else if (myTurn()) {
+      status += '｜你領出，選 1–4 隻合法牌型';
+    }
+  }
+  const previous = state?.history.at(-1);
+  const mustFold = myTurn() && state.hands[0].length === 1 && state.won[0] === 0;
+  const previousText = previous && state.phase === 'playing'
+    ? `上輪 ${PLAYERS[previous.winner]}收 ${previous.n} 墩`
+    : '';
+  $('turn-status').textContent = status;
+  $('turn-detail').textContent = notice
+    || (mustFold ? '你未有墩，尾輪單隻必須墊牌。' : hint || selectionText || previousText);
+  $('turn-detail').classList.toggle('error', !!notice);
 }
 
 function render() {
@@ -122,14 +148,6 @@ function render() {
   renderTable(); renderHand();
   $('round-label').textContent = state ? `第 ${state.round} 局` : '準備入座';
   $('bank-info').textContent = state ? `${PLAYERS[state.banker]}做莊 · ${state.bankFactor} 倍` : '你與三位電腦對手';
-  let status = '入座後，由莊家先出牌。';
-  if (state?.phase === 'ended') status = '本局已結算，可以查看明細或開始下一局。';
-  else if (state?.phase === 'collect') status = `${PLAYERS[state.topPlayer]}最大，收 ${state.top.n} 墩。`;
-  else if (myTurn()) status = state.hands[0].length === 1 && state.won[0] === 0 ? '你未有墩，尾輪單隻必須墊牌。' : state.top ? '輪到你了 · 壓過目前最大牌，或選擇暗墊。' : '輪到你領出 · 單隻、對牌或文武組合。';
-  else if (state) status = `${PLAYERS[state.turn]}正在想牌…`;
-  $('turn-status').textContent = notice || status;
-  $('turn-status').classList.toggle('error', !!notice);
-  $('last-action').textContent = lastMessage || (state?.history.length ? `${PLAYERS[state.history.at(-1).winner]}上輪取得 ${state.history.at(-1).n} 墩。` : '有大牌亦可墊牌，留一手爭尾墩。');
   $('save-note').textContent = storageOkay ? '牌局只儲存在這個瀏覽器 · 純積分遊戲' : '這個瀏覽器未能儲存牌局；重新整理後可能遺失進度。';
   $('sound-toggle').innerHTML = options.sound ? icons.sound : icons.muted;
   $('sound-toggle').setAttribute('aria-label', options.sound ? '關閉音效' : '開啟音效');
@@ -144,13 +162,10 @@ function schedule() {
     try {
       notice = '';
       if (state.phase === 'collect') {
-        const who = PLAYERS[state.topPlayer], n = state.top.n;
         collect(state); sound('collect');
-        lastMessage = `${who}食 ${n} 墩${state.phase === 'ended' ? '，本局結牌。' : '，取得領出權。'}`;
       } else {
         const who = state.turn, action = chooseMove(publicView(state, who));
         play(state, who, action.ids, action.fold); sound();
-        lastMessage = action.fold ? `${PLAYERS[who]}暗墊 ${action.ids.length} 隻。` : `${PLAYERS[who]}打出${pattern(action.ids).name}。`;
       }
       save(); render(); schedule();
     } catch (error) { notice = `牌局暫停：${error.message}`; render(); }
@@ -159,7 +174,7 @@ function schedule() {
 
 function begin() {
   clearTimeout(timer);
-  state = newGame(); selected = []; notice = ''; lastMessage = `${PLAYERS[state.banker]}做莊，先領出。`;
+  state = newGame(); selected = []; notice = '';
   save(); render(); schedule();
 }
 
@@ -167,7 +182,6 @@ function submit(fold) {
   try {
     const chosen = [...selected];
     play(state, 0, chosen, fold);
-    lastMessage = fold ? `你暗墊 ${chosen.length} 隻。` : `你打出${pattern(chosen).name}。`;
     selected = []; notice = ''; sound(); save(); render(); schedule();
   } catch (error) { notice = error.message; render(); }
 }
@@ -183,8 +197,6 @@ $('hand').addEventListener('click', event => {
     selected.push(id);
   }
   notice = ''; renderHand();
-  $('turn-status').classList.remove('error');
-  $('turn-status').textContent = myTurn() ? '選好後按「出牌」或「墊牌」。' : '';
 });
 $('hand').addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -199,15 +211,15 @@ $('clear-selection').addEventListener('click', () => { selected = []; notice = '
 $('hint').addEventListener('click', () => {
   if (!myTurn()) return;
   const action = chooseMove(publicView(state, 0));
-  selected = action.ids; render();
-  $('turn-status').textContent = action.fold ? '建議暗墊已選的牌，保留其餘牌組。' : `建議出${pattern(action.ids).name}；你亦可改選。`;
+  selected = action.ids; notice = '';
+  renderHand(action.fold ? '建議暗墊已選的牌，保留其餘牌組。' : `建議出${pattern(action.ids).name}，你亦可改選。`);
 });
 $('table-content').addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action === 'start') begin();
   if (action === 'settlement') showScores();
   if (action === 'next' && state?.phase === 'ended') {
-    state = nextRound(state); selected = []; notice = ''; lastMessage = `${PLAYERS[state.banker]}做莊，${state.bankFactor} 倍。`;
+    state = nextRound(state); selected = []; notice = '';
     save(); render(); schedule();
   }
 });
